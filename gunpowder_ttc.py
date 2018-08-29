@@ -40,7 +40,7 @@ def train(iterations):
     request = gp.BatchRequest()
     request.add(raw, input_size)
     request.add(gt_labels, output_size)
-    # request.add(loss_weights, output_size)
+    request.add(loss_weights, output_size)
 
     # when we make a snapshot for inspection (see below), we also want to
     # request the predicted affinities and gradients of the loss wrt the
@@ -94,18 +94,17 @@ def train(iterations):
             scale=1,
             shift=-1) +
 
-        gp.PreCache(cache_size=400, num_workers=4) +
-
         # create a weight array that balances positive and negative samples in
         # the affinity array
-        # gp.BalanceLabels(
-        #     gt_labels,
-        #     loss_weights) +
+        gp.BalanceLabels(
+            gt_labels,
+            loss_weights,
+            num_classes=4) +
 
         # pre-cache batches from the point upstream
-        # gp.PreCache(
-        #     cache_size=10,
-        #     num_workers=5) +
+        gp.PreCache(
+            cache_size=400,
+            num_workers=5) +
 
         # perform one training iteration for each passing batch (here we use
         # the tensor names earlier stored in train_net.config)
@@ -116,7 +115,7 @@ def train(iterations):
             inputs={
                 net_config['raw']: raw,
                 net_config['gt_labels']: gt_labels,
-                # net_config['loss_weights']: loss_weights
+                net_config['loss_weights']: loss_weights
             },
             outputs={
                 net_config['pred_labels']: pred_labels

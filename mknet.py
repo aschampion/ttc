@@ -35,18 +35,16 @@ def create_network(input_shape, name):
     gt_affs = tf.placeholder(tf.int32, shape=output_shape)
 
     # create a placeholder for per-voxel loss weights
-    # loss_weights = tf.placeholder(
-    #     tf.float32,
-    #     shape=output_shape)
-    print(gt_affs.get_shape().as_list())
-    print(pred_affs_swap.get_shape().as_list())
-    # print(loss_weights.get_shape().as_list())
+    loss_weights = tf.placeholder(
+        tf.float32,
+        shape=output_shape)
 
     # compute the loss as the weighted mean squared error between the
     # predicted and the ground-truth affinities
     loss = tf.losses.sparse_softmax_cross_entropy(
         gt_affs,
-        pred_affs_swap)
+        pred_affs_swap,
+        loss_weights)
 
     # use the Adam optimizer to minimize the loss
     opt = tf.train.AdamOptimizer(
@@ -70,7 +68,7 @@ def create_network(input_shape, name):
         'pred_labels_swap': pred_affs_swap.name,
         'pred_labels': pred_affs.name,
         'gt_labels': gt_affs.name,
-        # 'loss_weights': loss_weights.name,
+        'loss_weights': loss_weights.name,
         'loss': loss.name,
         'optimizer': optimizer.name,
         'input_shape': input_shape,
