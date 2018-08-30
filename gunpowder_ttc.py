@@ -24,6 +24,9 @@ def train(iterations):
     # the gredient of the loss wrt to the predicted labels
     pred_labels_gradients = gp.ArrayKey('PRED_LABELS_GRADIENTS')
 
+
+    NUM_CLASSES = 3
+
     ####################
     # DECLARE REQUESTS #
     ####################
@@ -67,6 +70,21 @@ def train(iterations):
             }
         ) +
 
+        gp.ExcludeLabels(
+            gt_labels,
+            [0],
+            background_value=1) +
+
+        gp.ExcludeLabels(
+            gt_labels,
+            [4],
+            background_value=2) +
+
+        gp.IntensityScaleShift(
+            gt_labels,
+            scale=1,
+            shift=-1) +
+
         # convert raw to float in [0, 1]
         gp.Normalize(raw) +
 
@@ -84,22 +102,12 @@ def train(iterations):
             shift_min=-0.1,
             shift_max=0.1) +
 
-        gp.ExcludeLabels(
-            gt_labels,
-            [0],
-            background_value=1) +
-
-        gp.IntensityScaleShift(
-            gt_labels,
-            scale=1,
-            shift=-1) +
-
         # create a weight array that balances positive and negative samples in
         # the affinity array
         gp.BalanceLabels(
             gt_labels,
             loss_weights,
-            num_classes=4) +
+            num_classes=NUM_CLASSES) +
 
         # pre-cache batches from the point upstream
         gp.PreCache(
@@ -123,7 +131,7 @@ def train(iterations):
             gradients={
                 net_config['pred_labels_swap']: pred_labels_gradients
             },
-            save_every=1000000,
+            save_every=10000,
             log_dir='log',
             log_every=100,
             summary=net_config['summary'],
@@ -148,7 +156,7 @@ def train(iterations):
         #     compression_type='gzip') +
 
         # show a summary of time spend in each node every 10 iterations
-        gp.PrintProfilingStats(every=10)
+        gp.PrintProfilingStats(every=100)
     )
 
     #########
@@ -164,4 +172,4 @@ def train(iterations):
     print("Finished")
 
 if __name__ == "__main__":
-    train(200000)
+    train(100000)
