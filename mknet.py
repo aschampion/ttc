@@ -86,3 +86,9 @@ if __name__ == "__main__":
 
     # create a larger network for faster prediction
     create_network((322, 322), 'test_net', 3)
+
+    # create a network for training
+    create_network((268, 268), 'train_net_nuclei', 2)
+
+    # create a larger network for faster prediction
+    create_network((322, 322), 'test_net_nuclei', 2)
