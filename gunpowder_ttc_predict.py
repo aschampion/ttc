@@ -62,7 +62,7 @@ def predict(iteration):
         # perform one training iteration for each passing batch (here we use
         # the tensor names earlier stored in train_net.config)
         gp.tensorflow.Predict(
-            graph='test_net.meta',
+            graph='./test_net.meta',
             checkpoint='train_net_checkpoint_%d'%iteration,
             inputs={
                 net_config['raw']: raw

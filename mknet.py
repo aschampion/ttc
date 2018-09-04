@@ -25,7 +25,6 @@ def create_network(input_shape, name, num_classes):
     # get the shape of the output
     output_shape_batched = pred_affs_batched.get_shape().as_list()
     output_shape = output_shape_batched[2:] # strip the batch dimension
-    # output_shape = [56, 56]
 
     # the 4D output tensor (3, depth, height, width)
     pred_affs_swap = tf.reshape(pred_affs_batched, output_shape_batched[1:])

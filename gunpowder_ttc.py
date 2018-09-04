@@ -89,7 +89,7 @@ def train(iterations):
         gp.Normalize(raw) +
 
         # chose a random location for each requested batch
-            gp.RandomLocation() +
+        gp.RandomLocation() +
 
         # apply transpose and mirror augmentations
         gp.SimpleAugment() +
@@ -117,7 +117,7 @@ def train(iterations):
         # perform one training iteration for each passing batch (here we use
         # the tensor names earlier stored in train_net.config)
         gp.tensorflow.Train(
-            'train_net',
+            './train_net',
             net_config['optimizer'],
             net_config['loss'],
             inputs={
@@ -126,7 +126,11 @@ def train(iterations):
                 net_config['loss_weights']: loss_weights
             },
             outputs={
-                net_config['pred_labels']: pred_labels
+                # TODO: Mystery
+                # Note that for some reason the logits rather than labels
+                # must be requested here. If labels are requested, the network
+                # only learns class 0.
+                net_config['pred_logits']: pred_labels
             },
             gradients={
                 net_config['pred_labels_swap']: pred_labels_gradients
