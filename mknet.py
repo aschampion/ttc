@@ -53,11 +53,16 @@ def create_network(input_shape, name, num_classes):
         epsilon=1e-8)
     optimizer = opt.minimize(loss)
 
-    tf.summary.scalar("loss", loss)
-    merged_summary_op = tf.summary.merge_all()
-
     pred_logits = tf.transpose(pred_affs_swap, [2, 0, 1])
     pred_labels = tf.argmax(pred_logits, axis=0)
+    gt_labels_u8 = tf.cast(gt_affs, dtype=tf.uint8)
+    pred_labels_u8 = tf.cast(pred_labels, dtype=tf.uint8)
+
+    tf.summary.scalar("loss", loss)
+    tf.summary.image("raw", tf.transpose(raw_batched, [0, 2, 3, 1]))
+    tf.summary.image("gt_labels", tf.expand_dims(tf.expand_dims(tf.scalar_mul(16, gt_labels_u8), 0), -1))
+    tf.summary.image("pred_labels", tf.expand_dims(tf.expand_dims(tf.scalar_mul(16, pred_labels_u8), 0), -1))
+    merged_summary_op = tf.summary.merge_all()
 
     # store the network in a meta-graph file
     tf.train.export_meta_graph(filename=name + '.meta')

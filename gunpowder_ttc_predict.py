@@ -98,4 +98,4 @@ def predict(iteration):
         pipeline.request_batch(gp.BatchRequest())
 
 if __name__ == "__main__":
-    predict(100000)
+    predict(50000)

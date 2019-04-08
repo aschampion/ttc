@@ -2,8 +2,10 @@ from __future__ import print_function
 import gunpowder as gp
 import json
 import math
+import os
+import sys
 
-def train(iterations):
+def train(iterations, run_name="default"):
 
     ##################
     # DECLARE ARRAYS #
@@ -58,27 +60,93 @@ def train(iterations):
 
     pipeline = (
 
-        gp.DirectorySource(
-            '/home/championa/data/nadine/1018/sequence_export',
-            {
-                raw: 'z=0.0 to z=1170000-1.tif',
-                gt_labels: 'Labels3.tif'
-            },
-            {
-                raw: gp.ArraySpec(voxel_size=(48,48), interpolatable=True),
-                gt_labels: gp.ArraySpec(voxel_size=(48,48), interpolatable=False),
-            }
+        (
+            # Labels:
+            # 0: background
+            # 1: empty
+            # 2: bundles
+            # 3: neuropil
+            # 4: tissue
+            tuple(
+                gp.DirectorySource(
+                    '/groups/cardona/cardonalab/Andrew/Tissue labeling/1018/0001 - VNC',
+                    {
+
+                        raw: 'z=0.0 to z=117000{i}-1.tif'.format(i=i),
+                        gt_labels: 'label_render/ttc/labels000{i}.tif'.format(i=i)
+                    },
+                    {
+                        raw: gp.ArraySpec(voxel_size=(48,48), interpolatable=True),
+                        gt_labels: gp.ArraySpec(voxel_size=(48,48), interpolatable=False),
+                    }
+                )
+                for i in range(0, 5)
+            ) +
+
+            gp.RandomProvider() +
+
+            # gp.MapLabels(
+            #     gt_labels,
+            #     {0: 0, 1: 0, 2: 1, 3: 2, 4: 1}) +
+
+            gp.ExcludeLabels(
+                gt_labels,
+                [0],
+                background_value=1) +
+
+            gp.ExcludeLabels(
+                gt_labels,
+                [4],
+                background_value=2),
+
+
+            # Labels:
+            # 0: background
+            # 1: empty
+            # 2: bundles
+            # 3: tissue
+            # 4: neuropil
+            # 5: esophagus
+            tuple(
+                gp.DirectorySource(
+                    '/groups/cardona/cardonalab/Andrew/Tissue labeling/1018/0002_Anterior',
+                    {
+
+                        raw: '{i}.png'.format(i=560+i),
+                        gt_labels: 'label_render/ttc/labels000{i}.tif'.format(i=i)
+                    },
+                    {
+                        raw: gp.ArraySpec(voxel_size=(48,48), interpolatable=True),
+                        gt_labels: gp.ArraySpec(voxel_size=(48,48), interpolatable=False),
+                    }
+                )
+                for i in range(1, 5)
+            ) +
+
+            gp.RandomProvider() +
+
+            gp.ExcludeLabels(
+                gt_labels,
+                [0],
+                background_value=1) +
+
+            gp.ExcludeLabels(
+                gt_labels,
+                [3, 5],
+                background_value=2) +
+
+            gp.ExcludeLabels(
+                gt_labels,
+                [4],
+                background_value=3)
         ) +
 
-        gp.ExcludeLabels(
-            gt_labels,
-            [0],
-            background_value=1) +
+        # Labels:
+        # 0: background/empty
+        # 1: tissue/bundles/esophagus
+        # 2: neuropil
 
-        gp.ExcludeLabels(
-            gt_labels,
-            [4],
-            background_value=2) +
+        gp.RandomProvider() +
 
         gp.IntensityScaleShift(
             gt_labels,
@@ -111,8 +179,8 @@ def train(iterations):
 
         # pre-cache batches from the point upstream
         gp.PreCache(
-            cache_size=400,
-            num_workers=5) +
+            cache_size=1000,
+            num_workers=8) +
 
         # perform one training iteration for each passing batch (here we use
         # the tensor names earlier stored in train_net.config)
@@ -136,7 +204,7 @@ def train(iterations):
                 net_config['pred_labels_swap']: pred_labels_gradients
             },
             save_every=10000,
-            log_dir='log',
+            log_dir=os.path.join('log', run_name),
             log_every=100,
             summary=net_config['summary'],
             # array_specs={
@@ -176,4 +244,4 @@ def train(iterations):
     print("Finished")
 
 if __name__ == "__main__":
-    train(100000)
+    train(200000, sys.argv[1])
