@@ -69,7 +69,7 @@ def train(iterations, run_name="default"):
             # 4: tissue
             tuple(
                 gp.DirectorySource(
-                    '/groups/cardona/cardonalab/Andrew/Tissue labeling/1018/0001 - VNC',
+                    '/data/1018/0001 - VNC',
                     {
 
                         raw: 'z=0.0 to z=117000{i}-1.tif'.format(i=i),
@@ -109,7 +109,7 @@ def train(iterations, run_name="default"):
             # 5: esophagus
             tuple(
                 gp.DirectorySource(
-                    '/groups/cardona/cardonalab/Andrew/Tissue labeling/1018/0002_Anterior',
+                    '/data/1018/0002_Anterior',
                     {
 
                         raw: '{i}.png'.format(i=560+i),
@@ -244,4 +244,4 @@ def train(iterations, run_name="default"):
     print("Finished")
 
 if __name__ == "__main__":
-    train(200000, sys.argv[1])
+    train(2000000, sys.argv[1])
