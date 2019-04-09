@@ -36,10 +36,19 @@ def predict(iteration):
     # ASSEMBLE TESTING PIPELINE #
     #############################
 
-    source = gp.DirectorySource(
-            '/home/championa/data/nadine/1018/sequence_export',
+    # source = gp.DirectorySource(
+    #         '/home/championa/data/nadine/1018/sequence_export',
+    #         {
+    #             raw: 'z=0.0 to z=1170001-1.tif',
+    #         },
+    #         {
+    #             raw: gp.ArraySpec(voxel_size=(48,48), interpolatable=True),
+    #         }
+    #     )
+    source = gp.N5Source(
+            '/data/1018/larva-1018.n5',
             {
-                raw: 'z=0.0 to z=1170001-1.tif',
+                raw: '/volumes/raw/c0/s2',
             },
             {
                 raw: gp.ArraySpec(voxel_size=(48,48), interpolatable=True),
@@ -98,4 +107,4 @@ def predict(iteration):
         pipeline.request_batch(gp.BatchRequest())
 
 if __name__ == "__main__":
-    predict(50000)
+    predict(2000000)
