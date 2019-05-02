@@ -22,9 +22,9 @@ def predict(iteration):
         net_config = json.load(f)
 
     # get the input and output size in world units (nm, in this case)
-    voxel_size = gp.Coordinate((48, 48))
-    input_size = gp.Coordinate(net_config['input_shape'])*voxel_size
-    output_size = gp.Coordinate(net_config['output_shape'])*voxel_size
+    voxel_size = gp.Coordinate((48, 48, 48))
+    input_size = gp.Coordinate([1,] + net_config['input_shape'])*voxel_size
+    output_size = gp.Coordinate([1,] + net_config['output_shape'])*voxel_size
     context = input_size - output_size
 
     # formulate the request for what a batch should contain
@@ -46,19 +46,47 @@ def predict(iteration):
     #         }
     #     )
     source = gp.N5Source(
-            '/data/1018/larva-1018.n5',
+            '/data1/championa/Tissue labeling/1018/larva-1018.n5',
             {
                 raw: '/volumes/raw/c0/s2',
             },
             {
-                raw: gp.ArraySpec(voxel_size=(48,48), interpolatable=True),
+                raw: gp.ArraySpec(voxel_size=(48, 48, 48), interpolatable=True),
             }
-        )
+#           )
+        ) + gp.Crop(
+                raw,
+                fraction_negative=(0.48, 0, 0),
+                fraction_positive=(0.48, 0, 0))
+
+    squeeze = gp.Squeeze(
+            {
+                raw: 0,
+            })
 
     # get the ROI provided for raw (we need it later to calculate the ROI in
     # which we can make predictions)
     with gp.build(source):
         raw_roi = source.spec[raw].roi
+
+    pred_labels_roi = raw_roi.grow(-context, -context)
+    pred_labels_2d_roi = gp.Roi(
+            offset=pred_labels_roi.get_offset()[1:3],
+            shape=pred_labels_roi.get_shape()[1:3])
+    pred_labels_sq_roi = gp.Roi(
+            offset=(pred_labels_roi.get_offset()[0],),
+            shape=(pred_labels_roi.get_shape()[0],))
+
+    expand = gp.Expand(
+            axes={
+                pred_labels: {
+                    'axis': 0,
+                    'spec': gp.ArraySpec(roi=pred_labels_sq_roi, voxel_size=gp.Coordinate((48,))),
+                    'propagate': False,
+                },
+            },
+            squeeze_node=squeeze
+        )
 
     pipeline = (
 
@@ -67,6 +95,8 @@ def predict(iteration):
 
         # convert raw to float in [0, 1]
         gp.Normalize(raw) +
+
+        squeeze +
 
         # perform one training iteration for each passing batch (here we use
         # the tensor names earlier stored in train_net.config)
@@ -80,17 +110,22 @@ def predict(iteration):
                 net_config['pred_labels']: pred_labels
             },
             array_specs={
-                pred_labels: gp.ArraySpec(roi=raw_roi.grow(-context, -context))
+                pred_labels: gp.ArraySpec(roi=pred_labels_2d_roi)
             }) +
 
+        expand.stubs() +
+
+        expand +
+
         # store all passing batches in the same HDF5 file
-        gp.Hdf5Write(
+        gp.N5Write(
             {
-                raw: '/volumes/raw',
+                #raw: '/volumes/raw',
                 pred_labels: '/volumes/pred_labels',
             },
-            output_filename='predictions.hdf',
+            output_filename='predictions.n5',
             compression_type='gzip'
+            #compression_type='raw'
         ) +
 
         # show a summary of time spend in each node every 10 iterations
@@ -107,4 +142,6 @@ def predict(iteration):
         pipeline.request_batch(gp.BatchRequest())
 
 if __name__ == "__main__":
+    import logging
+    logging.basicConfig(level=logging.INFO)
     predict(2000000)
