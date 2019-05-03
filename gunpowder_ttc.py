@@ -1,6 +1,7 @@
 from __future__ import print_function
 import gunpowder as gp
 import json
+import logging
 import math
 import os
 import sys
@@ -69,7 +70,7 @@ def train(iterations, run_name="default"):
             # 4: tissue
             tuple(
                 gp.DirectorySource(
-                    '/data/1018/0001 - VNC',
+                    'data/1018/0001 - VNC',
                     {
 
                         raw: 'z=0.0 to z=117000{i}-1.tif'.format(i=i),
@@ -80,7 +81,7 @@ def train(iterations, run_name="default"):
                         gt_labels: gp.ArraySpec(voxel_size=(48,48), interpolatable=False),
                     }
                 )
-                for i in range(0, 5)
+                for i in range(0, 10)
             ) +
 
             gp.RandomProvider() +
@@ -109,7 +110,7 @@ def train(iterations, run_name="default"):
             # 5: esophagus
             tuple(
                 gp.DirectorySource(
-                    '/data/1018/0002_Anterior',
+                    'data/1018/0002_Anterior',
                     {
 
                         raw: '{i}.png'.format(i=560+i),
@@ -120,7 +121,7 @@ def train(iterations, run_name="default"):
                         gt_labels: gp.ArraySpec(voxel_size=(48,48), interpolatable=False),
                     }
                 )
-                for i in range(1, 5)
+                for i in range(1, 10)
             ) +
 
             gp.RandomProvider() +
@@ -244,4 +245,5 @@ def train(iterations, run_name="default"):
     print("Finished")
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     train(2000000, sys.argv[1])
