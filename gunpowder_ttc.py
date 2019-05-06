@@ -38,9 +38,9 @@ def train(iterations, run_name="default"):
         net_config = json.load(f)
 
     # get the input and output size in world units (nm, in this case)
-    voxel_size = gp.Coordinate((48, 48))
-    input_size = gp.Coordinate(net_config['input_shape'])*voxel_size
-    output_size = gp.Coordinate(net_config['output_shape'])*voxel_size
+    voxel_size = gp.Coordinate((48, 48, 48))
+    input_size = gp.Coordinate(net_config['input_shape'])*voxel_size[1:]
+    output_size = gp.Coordinate(net_config['output_shape'][1:])*voxel_size[1:]
 
     # formulate the request for what a batch should (at least) contain
     request = gp.BatchRequest()
@@ -54,6 +54,20 @@ def train(iterations, run_name="default"):
     snapshot_request = gp.BatchRequest()
     snapshot_request[pred_labels] = request[gt_labels]
     snapshot_request[pred_labels_gradients] = request[gt_labels]
+
+    expand = gp.Expand(
+        axes={
+            raw: {
+                'axis': 0,
+                'spec': gp.ArraySpec(roi=gp.Roi((0,),(48,)), voxel_size=gp.Coordinate((48,))),
+                'propagate': False,
+            },
+            gt_labels: {
+                'axis': 0,
+                'spec': gp.ArraySpec(roi=gp.Roi((0,),(48,)), voxel_size=gp.Coordinate((48,))),
+                'propagate': False,
+            },
+        })
 
     ##############################
     # ASSEMBLE TRAINING PIPELINE #
@@ -171,6 +185,10 @@ def train(iterations, run_name="default"):
             shift_min=-0.1,
             shift_max=0.1) +
 
+        expand.stubs() +
+
+        expand +
+
         # create a weight array that balances positive and negative samples in
         # the affinity array
         gp.BalanceLabels(
@@ -213,6 +231,12 @@ def train(iterations, run_name="default"):
             #     pred_labels_gradients: gp.ArraySpec(voxel_size=())
             # }
             ) +
+
+        gp.Squeeze({
+            raw: 0,
+            gt_labels: 0,
+            loss_weights: 0
+        }) +
 
         # save the passing batch as an HDF5 file for inspection
         # gp.Snapshot(

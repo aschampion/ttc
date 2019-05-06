@@ -7,10 +7,10 @@ def create_network(input_shape, name, num_classes):
     tf.reset_default_graph()
 
     # create a placeholder for the 3D raw input tensor
-    raw = tf.placeholder(tf.float32, shape=input_shape)
+    raw = tf.placeholder(tf.float32, shape=(None,) + input_shape)
 
     # create a U-Net
-    raw_batched = tf.reshape(raw, (1, 1) + input_shape)
+    raw_batched = tf.expand_dims(raw, 1)  # Add singleton dimension for channels
     unet_output = unet(raw_batched, num_classes*2, 4, [[3,3],[3,3],[3,3]])
 
     # add a convolution layer to create 3 output maps representing affinities
@@ -24,11 +24,11 @@ def create_network(input_shape, name, num_classes):
 
     # get the shape of the output
     output_shape_batched = pred_affs_batched.get_shape().as_list()
-    output_shape = output_shape_batched[2:] # strip the batch dimension
+    output_shape = [None,] + output_shape_batched[2:] # strip the channels dimension
 
     # the 4D output tensor (3, depth, height, width)
-    pred_affs_swap = tf.reshape(pred_affs_batched, output_shape_batched[1:])
-    pred_affs_swap = tf.transpose(pred_affs_swap, [1, 2, 0])
+    # pred_affs_swap = tf.reshape(pred_affs_batched, output_shape_batched[1:])
+    pred_affs_swap = tf.transpose(pred_affs_batched, [0, 2, 3, 1])
 
     # create a placeholder for the corresponding ground-truth affinities
     gt_affs = tf.placeholder(tf.int32, shape=output_shape)
@@ -53,15 +53,15 @@ def create_network(input_shape, name, num_classes):
         epsilon=1e-8)
     optimizer = opt.minimize(loss)
 
-    pred_logits = tf.transpose(pred_affs_swap, [2, 0, 1])
-    pred_labels = tf.argmax(pred_logits, axis=0)
+    pred_logits = tf.transpose(pred_affs_swap, [0, 3, 1, 2])
+    pred_labels = tf.argmax(pred_logits, axis=1)
     gt_labels_u8 = tf.cast(gt_affs, dtype=tf.uint8)
     pred_labels_u8 = tf.cast(pred_labels, dtype=tf.uint8)
 
     tf.summary.scalar("loss", loss)
     tf.summary.image("raw", tf.transpose(raw_batched, [0, 2, 3, 1]))
-    tf.summary.image("gt_labels", tf.expand_dims(tf.expand_dims(tf.scalar_mul(16, gt_labels_u8), 0), -1))
-    tf.summary.image("pred_labels", tf.expand_dims(tf.expand_dims(tf.scalar_mul(16, pred_labels_u8), 0), -1))
+    tf.summary.image("gt_labels", tf.transpose(tf.scalar_mul(16, gt_labels_u8), [0, 2, 3, 1]))
+    tf.summary.image("pred_labels", tf.transpose(tf.scalar_mul(16, pred_labels_u8), [0, 2, 3, 1]))
     merged_summary_op = tf.summary.merge_all()
 
     # store the network in a meta-graph file
