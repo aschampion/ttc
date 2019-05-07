@@ -1,6 +1,7 @@
 from __future__ import print_function
 import gunpowder as gp
 import json
+import numpy as np
 
 def predict(iteration):
 
@@ -23,8 +24,8 @@ def predict(iteration):
 
     # get the input and output size in world units (nm, in this case)
     voxel_size = gp.Coordinate((48, 48, 48))
-    input_size = gp.Coordinate([1,] + net_config['input_shape'])*voxel_size
-    output_size = gp.Coordinate([1,] + net_config['output_shape'])*voxel_size
+    input_size = gp.Coordinate([32,] + net_config['input_shape'])*voxel_size
+    output_size = gp.Coordinate([32,] + net_config['output_shape'][1:])*voxel_size
     context = input_size - output_size
 
     # formulate the request for what a batch should contain
@@ -46,7 +47,7 @@ def predict(iteration):
     #         }
     #     )
     source = gp.N5Source(
-            '/data1/championa/Tissue labeling/1018/larva-1018.n5',
+            'data/1018/larva-1018.n5',
             {
                 raw: '/volumes/raw/c0/s2',
             },
@@ -96,7 +97,7 @@ def predict(iteration):
         # convert raw to float in [0, 1]
         gp.Normalize(raw) +
 
-        squeeze +
+        #squeeze +
 
         # perform one training iteration for each passing batch (here we use
         # the tensor names earlier stored in train_net.config)
@@ -110,12 +111,12 @@ def predict(iteration):
                 net_config['pred_labels']: pred_labels
             },
             array_specs={
-                pred_labels: gp.ArraySpec(roi=pred_labels_2d_roi)
+                pred_labels: gp.ArraySpec(roi=pred_labels_roi, dtype=np.uint32)
             }) +
 
-        expand.stubs() +
+        #expand.stubs() +
 
-        expand +
+        #expand +
 
         # store all passing batches in the same HDF5 file
         gp.N5Write(
