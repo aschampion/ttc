@@ -1,10 +1,14 @@
 from __future__ import print_function
 import gunpowder as gp
 import json
+import logging
 import math
+import os
+import sys
+
 import numpy as np
 
-def train(iterations):
+def train(iterations, run_name="default"):
 
     ##################
     # DECLARE ARRAYS #
@@ -37,9 +41,9 @@ def train(iterations):
         net_config = json.load(f)
 
     # get the input and output size in world units (nm, in this case)
-    voxel_size = gp.Coordinate((48, 48))
-    input_size = gp.Coordinate(net_config['input_shape'])*voxel_size
-    output_size = gp.Coordinate(net_config['output_shape'])*voxel_size
+    voxel_size = gp.Coordinate((48, 48, 48))
+    input_size = gp.Coordinate(net_config['input_shape'])*voxel_size[1:]
+    output_size = gp.Coordinate(net_config['output_shape'][1:])*voxel_size[1:]
 
     # formulate the request for what a batch should (at least) contain
     request = gp.BatchRequest()
@@ -53,7 +57,26 @@ def train(iterations):
     # affinities
     snapshot_request = gp.BatchRequest()
     snapshot_request[pred_labels] = request[gt_labels]
-    snapshot_request[pred_labels_gradients] = request[gt_labels]
+    # snapshot_request[pred_labels_gradients] = request[gt_labels]
+
+    expand = gp.Expand(
+        axes={
+            raw: {
+                'axis': 0,
+                'spec': gp.ArraySpec(roi=gp.Roi((0,),(48,)), voxel_size=gp.Coordinate((48,))),
+                'propagate': False,
+            },
+            gt_labels: {
+                'axis': 0,
+                'spec': gp.ArraySpec(roi=gp.Roi((0,),(48,)), voxel_size=gp.Coordinate((48,))),
+                'propagate': False,
+            },
+            gt_ttc_labels: {
+                'axis': 0,
+                'spec': gp.ArraySpec(roi=gp.Roi((0,),(48,)), voxel_size=gp.Coordinate((48,))),
+                'propagate': False,
+            },
+        })
 
     ##############################
     # ASSEMBLE TRAINING PIPELINE #
@@ -61,28 +84,78 @@ def train(iterations):
 
     pipeline = (
 
-        gp.DirectorySource(
-            '/home/championa/data/nadine/1018/sequence_export',
-            {
-                raw: 'z=0.0 to z=1170000-1.tif',
-                gt_labels: 'Labels_nuclei.tif',
-                gt_ttc_labels: 'Labels3.tif',
-            },
-            {
-                raw: gp.ArraySpec(voxel_size=(48,48), interpolatable=True),
-                gt_labels: gp.ArraySpec(voxel_size=(48,48), interpolatable=False),
-                gt_ttc_labels: gp.ArraySpec(voxel_size=(48,48), interpolatable=False),
-            }
+        (
+            # TTC Labels:
+            # 0: background
+            # 1: empty
+            # 2: bundles
+            # 3: neuropil
+            # 4: tissue
+            tuple(
+                gp.DirectorySource(
+                    'data/1018/0001 - VNC',
+                    {
+
+                        raw: 'z=0.0 to z=117000{i}-1.tif'.format(i=i),
+                        gt_labels: 'label_render/nuclei/labels000{i}.tif'.format(i=i),
+                        gt_ttc_labels: 'label_render/ttc/labels000{i}.tif'.format(i=i),
+                    },
+                    {
+                        raw: gp.ArraySpec(voxel_size=(48,48), interpolatable=True),
+                        gt_labels: gp.ArraySpec(voxel_size=(48,48), interpolatable=False),
+                        gt_ttc_labels: gp.ArraySpec(voxel_size=(48,48), interpolatable=False),
+                    }
+                )
+                for i in range(0, 10)
+            ) +
+
+            gp.RandomProvider() +
+
+            # chose a random location for each requested batch
+            gp.RandomLocation(
+                min_masked=0.8,
+                mask=gt_ttc_labels,
+                mask_predicate=lambda m: np.logical_or(m == 2, m == 4)),
+
+            # TTC Labels:
+            # 0: background
+            # 1: empty
+            # 2: bundles
+            # 3: tissue
+            # 4: neuropil
+            # 5: esophagus
+            tuple(
+                gp.DirectorySource(
+                    'data/1018/0002_Anterior',
+                    {
+
+                        raw: '{i}.png'.format(i=560+i),
+                        gt_labels: 'label_render/nuclei/labels000{i}.tif'.format(i=i),
+                        gt_ttc_labels: 'label_render/ttc/labels000{i}.tif'.format(i=i),
+                    },
+                    {
+                        raw: gp.ArraySpec(voxel_size=(48,48), interpolatable=True),
+                        gt_labels: gp.ArraySpec(voxel_size=(48,48), interpolatable=False),
+                        gt_ttc_labels: gp.ArraySpec(voxel_size=(48,48), interpolatable=False),
+                    }
+                )
+                for i in range(1, 10)
+            ) +
+
+            gp.RandomProvider() +
+
+            # chose a random location for each requested batch
+            gp.RandomLocation(
+                min_masked=0.8,
+                mask=gt_ttc_labels,
+                mask_predicate=lambda m: np.logical_or(m == 2, m == 3)),
+
         ) +
+
+        gp.RandomProvider() +
 
         # convert raw to float in [0, 1]
         gp.Normalize(raw) +
-
-        # chose a random location for each requested batch
-        gp.RandomLocation(
-            min_masked=0.8,
-            mask=gt_ttc_labels,
-            mask_predicate=lambda m: np.logical_or(m == 2, m == 4)) +
 
         # apply transpose and mirror augmentations
         gp.SimpleAugment() +
@@ -94,6 +167,10 @@ def train(iterations):
             scale_max=1.1,
             shift_min=-0.1,
             shift_max=0.1) +
+
+        expand.stubs() +
+
+        expand +
 
         # create a weight array that balances positive and negative samples in
         # the affinity array
@@ -125,7 +202,7 @@ def train(iterations):
                 net_config['pred_labels_swap']: pred_labels_gradients
             },
             save_every=10000,
-            log_dir='log',
+            log_dir=os.path.join('log', run_name),
             log_every=100,
             summary=net_config['summary'],
             # array_specs={
@@ -134,13 +211,20 @@ def train(iterations):
             # }
             ) +
 
+        gp.Squeeze({
+            raw: 0,
+            gt_labels: 0,
+            gt_ttc_labels: 0,
+            loss_weights: 0
+        }) +
+
         # save the passing batch as an HDF5 file for inspection
         # gp.Snapshot(
         #     {
         #         raw: '/volumes/raw',
         #         gt_labels: '/volumes/labels',
         #         pred_labels: '/volumes/pred_labels',
-        #         pred_labels_gradients: '/volumes/pred_labels_gradients'
+        #         # pred_labels_gradients: '/volumes/pred_labels_gradients'
         #     },
         #     output_dir='snapshots',
         #     output_filename='batch_{iteration}.hdf',
@@ -165,4 +249,5 @@ def train(iterations):
     print("Finished")
 
 if __name__ == "__main__":
-    train(100000)
+    logging.basicConfig(level=logging.INFO)
+    train(2000000, sys.argv[1])
