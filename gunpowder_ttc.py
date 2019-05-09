@@ -135,7 +135,7 @@ def train(iterations, run_name="default"):
                         gt_labels: gp.ArraySpec(voxel_size=(48,48), interpolatable=False),
                     }
                 )
-                for i in range(1, 10)
+                for i in range(0, 10)
             ) +
 
             gp.RandomProvider() +
