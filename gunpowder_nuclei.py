@@ -44,6 +44,7 @@ def train(iterations, run_name="default"):
     voxel_size = gp.Coordinate((48, 48, 48))
     input_size = gp.Coordinate(net_config['input_shape'])*voxel_size[1:]
     output_size = gp.Coordinate(net_config['output_shape'][1:])*voxel_size[1:]
+    context = input_size - output_size
 
     # formulate the request for what a batch should (at least) contain
     request = gp.BatchRequest()
@@ -105,7 +106,8 @@ def train(iterations, run_name="default"):
                         gt_labels: gp.ArraySpec(voxel_size=(48,48), interpolatable=False),
                         gt_ttc_labels: gp.ArraySpec(voxel_size=(48,48), interpolatable=False),
                     }
-                )
+                ) +
+                gp.Pad(raw, context)
                 for i in range(0, 10)
             ) +
 
@@ -138,7 +140,8 @@ def train(iterations, run_name="default"):
                         gt_labels: gp.ArraySpec(voxel_size=(48,48), interpolatable=False),
                         gt_ttc_labels: gp.ArraySpec(voxel_size=(48,48), interpolatable=False),
                     }
-                )
+                ) +
+                gp.Pad(raw, context)
                 for i in range(0, 10)
             ) +
 
