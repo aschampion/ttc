@@ -2,8 +2,9 @@ from __future__ import print_function
 import gunpowder as gp
 import json
 import numpy as np
+import sys
 
-def predict(iteration):
+def predict(iteration, slab, n_slabs):
 
     ##################
     # DECLARE ARRAYS #
@@ -24,8 +25,8 @@ def predict(iteration):
 
     # get the input and output size in world units (nm, in this case)
     voxel_size = gp.Coordinate((48, 48, 48))
-    input_size = gp.Coordinate([32,] + net_config['input_shape'])*voxel_size
-    output_size = gp.Coordinate([32,] + net_config['output_shape'][1:])*voxel_size
+    input_size = gp.Coordinate([64,] + net_config['input_shape'])*voxel_size
+    output_size = gp.Coordinate([64,] + net_config['output_shape'][1:])*voxel_size
     context = input_size - output_size
 
     # formulate the request for what a batch should contain
@@ -36,16 +37,10 @@ def predict(iteration):
     #############################
     # ASSEMBLE TESTING PIPELINE #
     #############################
-
-    # source = gp.DirectorySource(
-    #         '/home/championa/data/nadine/1018/sequence_export',
-    #         {
-    #             raw: 'z=0.0 to z=1170001-1.tif',
-    #         },
-    #         {
-    #             raw: gp.ArraySpec(voxel_size=(48,48), interpolatable=True),
-    #         }
-    #     )
+    slab_size = 1.0 / n_slabs
+    slab_start = slab * slab_size
+    slab_stop = (slab + 1) * slab_size
+    
     source = gp.N5Source(
             'data/1018/larva-1018.n5',
             {
@@ -58,8 +53,8 @@ def predict(iteration):
         gp.Pad(raw, context) + \
         gp.Crop(
                 raw,
-                fraction_negative=(0.48, 0, 0),
-                fraction_positive=(0.48, 0, 0))
+                fraction_negative=(slab_start, 0, 0),
+                fraction_positive=(1 - slab_stop, 0, 0))
 
     squeeze = gp.Squeeze(
             {
@@ -123,7 +118,7 @@ def predict(iteration):
         gp.N5Write(
             {
                 #raw: '/volumes/raw',
-                pred_labels: '/volumes/pred_labels',
+                pred_labels: '/volumes/labels/ttc',
             },
             output_filename='predictions.n5',
             compression_type='gzip'
@@ -146,4 +141,4 @@ def predict(iteration):
 if __name__ == "__main__":
     import logging
     logging.basicConfig(level=logging.INFO)
-    predict(2000000)
+    predict(3000000, int(sys.argv[1]), int(sys.argv[2]))

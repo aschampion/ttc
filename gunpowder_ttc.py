@@ -270,4 +270,4 @@ def train(iterations, run_name="default"):
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    train(2000000, sys.argv[1])
+    train(3000000, sys.argv[1])

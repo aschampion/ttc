@@ -2,8 +2,9 @@ from __future__ import print_function
 import gunpowder as gp
 import json
 import numpy as np
+import sys
 
-def predict(iteration):
+def predict(iteration, slab, n_slabs):
 
     ##################
     # DECLARE ARRAYS #
@@ -36,7 +37,10 @@ def predict(iteration):
     #############################
     # ASSEMBLE TESTING PIPELINE #
     #############################
-
+    slab_size = 1.0 / n_slabs
+    slab_start = slab * slab_size
+    slab_stop = (slab + 1) * slab_size
+    
     source = gp.N5Source(
             'data/1018/larva-1018.n5',
             {
@@ -49,8 +53,9 @@ def predict(iteration):
         gp.Pad(raw, context) + \
         gp.Crop(
                 raw,
-                fraction_negative=(0.48, 0, 0),
-                fraction_positive=(0.48, 0, 0))
+                fraction_negative=(slab_start, 0, 0),
+                fraction_positive=(1 - slab_stop, 0, 0))
+
 
     # get the ROI provided for raw (we need it later to calculate the ROI in
     # which we can make predictions)
@@ -91,7 +96,7 @@ def predict(iteration):
         # store all passing batches in the same HDF5 file
         gp.N5Write(
             {
-                pred_labels: '/volumes/pred_labels',
+                pred_labels: '/volumes/labels/nuclei',
             },
             output_filename='predictions.n5',
             compression_type='gzip'
@@ -114,4 +119,4 @@ def predict(iteration):
 if __name__ == "__main__":
     import logging
     logging.basicConfig(level=logging.INFO)
-    predict(2000000)
+    predict(3000000, int(sys.argv[1]), int(sys.argv[2]))
