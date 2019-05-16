@@ -54,8 +54,9 @@ def predict(iteration):
             {
                 raw: gp.ArraySpec(voxel_size=(48, 48, 48), interpolatable=True),
             }
-#           )
-        ) + gp.Crop(
+        ) + \
+        gp.Pad(raw, context) + \
+        gp.Crop(
                 raw,
                 fraction_negative=(0.48, 0, 0),
                 fraction_positive=(0.48, 0, 0))
