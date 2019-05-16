@@ -34,8 +34,9 @@ def create_network(input_shape, name, num_classes):
     gt_affs = tf.placeholder(tf.int32, shape=output_shape)
 
     # create a placeholder for per-voxel loss weights
-    loss_weights = tf.placeholder(
-        tf.float32,
+    output_shape_broadcast = [1,] + output_shape[1:]
+    loss_weights = tf.placeholder_with_default(
+        tf.constant(1.0, shape=output_shape_broadcast, dtype=tf.float32),
         shape=output_shape)
 
     # compute the loss as the weighted mean squared error between the
