@@ -253,7 +253,7 @@ def train(iterations, run_name="default"):
         #     compression_type='gzip') +
 
         # show a summary of time spend in each node every 10 iterations
-        gp.PrintProfilingStats(every=100)
+        gp.PrintProfilingStats(every=1000)
     )
 
     #########
