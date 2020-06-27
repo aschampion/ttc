@@ -1,0 +1,12 @@
+{
+    "predict": {
+        "input": {
+            "container": "data/1018/larva-1018.n5",
+            "dataset": "/volumes/raw/c0/s2",
+            "resolution": [48, 48, 48]
+        },
+        "output": {
+            "container": "predictions.n5"
+        }
+    }
+}
