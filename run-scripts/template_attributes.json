@@ -1,0 +1,1 @@
+{"dataType": "int64", "compression": {"type": "gzip", "level": 5}, "dimensions": [3302,3264,4222], "blockSize": [64, 64, 64], "offset": [0, 0, 0], "resolution": [48, 48, 48]}
