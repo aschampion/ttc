@@ -28,6 +28,10 @@ def train(iterations, run_name="default"):
     pred_labels_gradients = gp.ArrayKey('PRED_LABELS_GRADIENTS')
 
 
+    EMPTY = 0
+    TISSUE = 1
+    NEUROPIL = 2
+    ESOPHAGUS = 3
     NUM_CLASSES = 3
 
     ####################
@@ -102,19 +106,19 @@ def train(iterations, run_name="default"):
 
             gp.RandomProvider() +
 
-            # gp.MapLabels(
+            gp.MapLabels(
+                gt_labels,
+                {0: EMPTY, 1: EMPTY, 2: TISSUE, 3: NEUROPIL, 4: TISSUE}),
+
+            # gp.ExcludeLabels(
             #     gt_labels,
-            #     {0: 0, 1: 0, 2: 1, 3: 2, 4: 1}) +
+            #     [0],
+            #     background_value=1) +
 
-            gp.ExcludeLabels(
-                gt_labels,
-                [0],
-                background_value=1) +
-
-            gp.ExcludeLabels(
-                gt_labels,
-                [4],
-                background_value=2),
+            # gp.ExcludeLabels(
+            #     gt_labels,
+            #     [4],
+            #     background_value=2),
 
 
             # Labels:
@@ -143,20 +147,24 @@ def train(iterations, run_name="default"):
 
             gp.RandomProvider() +
 
-            gp.ExcludeLabels(
+            gp.MapLabels(
                 gt_labels,
-                [0],
-                background_value=1) +
+                {0: EMPTY, 1: EMPTY, 2: TISSUE, 3: TISSUE, 4: NEUROPIL, 5: TISSUE}),
 
-            gp.ExcludeLabels(
-                gt_labels,
-                [3, 5],
-                background_value=2) +
+            # gp.ExcludeLabels(
+            #     gt_labels,
+            #     [0],
+            #     background_value=1) +
 
-            gp.ExcludeLabels(
-                gt_labels,
-                [4],
-                background_value=3)
+            # gp.ExcludeLabels(
+            #     gt_labels,
+            #     [3, 5],
+            #     background_value=2) +
+
+            # gp.ExcludeLabels(
+            #     gt_labels,
+            #     [4],
+            #     background_value=3)
         ) +
 
         # Labels:
@@ -166,10 +174,10 @@ def train(iterations, run_name="default"):
 
         gp.RandomProvider() +
 
-        gp.IntensityScaleShift(
-            gt_labels,
-            scale=1,
-            shift=-1) +
+        # gp.IntensityScaleShift(
+        #     gt_labels,
+        #     scale=1,
+        #     shift=-1) +
 
         # convert raw to float in [0, 1]
         gp.Normalize(raw) +
