@@ -192,7 +192,7 @@ class Predictor:
 
             # iterate over the whole dataset in a scanning fashion, emitting
             # requests that match the size of the network
-            gp.Scan(reference=request)
+            gp.Scan(reference=request, num_workers=4, cache_size=256)
         )
 
         with gp.build(pipeline):
