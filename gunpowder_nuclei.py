@@ -185,8 +185,8 @@ def train(iterations, run_name="default"):
 
         # pre-cache batches from the point upstream
         gp.PreCache(
-            cache_size=400,
-            num_workers=5) +
+            cache_size=2048,
+            num_workers=32) +
 
         # perform one training iteration for each passing batch (here we use
         # the tensor names earlier stored in train_net.config)
@@ -207,7 +207,7 @@ def train(iterations, run_name="default"):
             },
             save_every=10000,
             log_dir=os.path.join('log', run_name),
-            log_every=100,
+            log_every=1000,
             summary=net_config['summary'],
             # array_specs={
             #     pred_labels: gp.ArraySpec(voxel_size=(48,48,1)),
@@ -254,4 +254,5 @@ def train(iterations, run_name="default"):
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
+    logging.getLogger("gunpowder.nodes.generic_train").setLevel(logging.WARNING)
     train(3000000, sys.argv[1])
