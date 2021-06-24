@@ -6,10 +6,10 @@ ifndef slabs
 endif
 
 dir-setup:
-	ln -s ../../Makefile
+	ln -sf ../../Makefile
 	ln -s ../log
 	ln -s /data1/championa/Tissue\ labeling data
-	python ~/code/ttc-project/docker/ttc/mknet.py
+	CUDA_VISIBLE_DEVICES=0 python ~/code/ttc-project/docker/ttc/mknet.py
 
 ttc-train:
 	CUDA_VISIBLE_DEVICES=0 python ~/code/ttc-project/docker/ttc/gunpowder_ttc.py $$(basename "$$PWD")
