@@ -87,12 +87,6 @@ def train(iterations, run_name="default"):
     pipeline = (
 
         (
-            # TTC Labels:
-            # 0: background
-            # 1: empty
-            # 2: bundles
-            # 3: neuropil
-            # 4: tissue
             tuple(
                 gp.DirectorySource(
                     'data/1018/0001 - VNC',
@@ -118,15 +112,8 @@ def train(iterations, run_name="default"):
             gp.RandomLocation(
                 min_masked=0.8,
                 mask=gt_ttc_labels,
-                mask_predicate=lambda m: np.logical_or(m == 2, m == 4)),
+                mask_predicate=lambda m: np.logical_or(m == 1, m == 4)),
 
-            # TTC Labels:
-            # 0: background
-            # 1: empty
-            # 2: bundles
-            # 3: tissue
-            # 4: neuropil
-            # 5: esophagus
             tuple(
                 gp.DirectorySource(
                     'data/1018/0002_Anterior',
@@ -152,7 +139,7 @@ def train(iterations, run_name="default"):
             gp.RandomLocation(
                 min_masked=0.8,
                 mask=gt_ttc_labels,
-                mask_predicate=lambda m: np.logical_or(m == 2, m == 3)),
+                mask_predicate=lambda m: np.logical_or(m == 1, m == 4)),
 
         ) +
 

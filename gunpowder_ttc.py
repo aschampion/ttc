@@ -33,7 +33,20 @@ def train(iterations, run_name="default"):
     TISSUE = 1
     NEUROPIL = 2
     ESOPHAGUS = 3
+    BUNDLES = 4
     NUM_CLASSES = 3
+
+    # Labels:
+    # 0: background/empty
+    # 1: tissue/esophagus/bundles
+    # 2: neuropil
+    CLASS_3_MAPPING = {
+        EMPTY: EMPTY,
+        TISSUE: TISSUE,
+        NEUROPIL: NEUROPIL,
+        ESOPHAGUS: TISSUE,
+        BUNDLES: TISSUE,
+    }
 
     ####################
     # DECLARE REQUESTS #
@@ -82,12 +95,7 @@ def train(iterations, run_name="default"):
     pipeline = (
 
         (
-            # Labels:
-            # 0: background
-            # 1: empty
-            # 2: bundles
-            # 3: neuropil
-            # 4: tissue
+            # Labels now match constants above.
             tuple(
                 gp.DirectorySource(
                     'data/1018/0001 - VNC',
@@ -105,30 +113,8 @@ def train(iterations, run_name="default"):
                 for i in range(0, 10)
             ) +
 
-            gp.RandomProvider() +
+            gp.RandomProvider(),
 
-            gp.MapLabels(
-                gt_labels,
-                {0: EMPTY, 1: EMPTY, 2: TISSUE, 3: NEUROPIL, 4: TISSUE}),
-
-            # gp.ExcludeLabels(
-            #     gt_labels,
-            #     [0],
-            #     background_value=1) +
-
-            # gp.ExcludeLabels(
-            #     gt_labels,
-            #     [4],
-            #     background_value=2),
-
-
-            # Labels:
-            # 0: background
-            # 1: empty
-            # 2: bundles
-            # 3: tissue
-            # 4: neuropil
-            # 5: esophagus
             tuple(
                 gp.DirectorySource(
                     'data/1018/0002_Anterior',
@@ -146,39 +132,12 @@ def train(iterations, run_name="default"):
                 for i in range(0, 10)
             ) +
 
-            gp.RandomProvider() +
-
-            gp.MapLabels(
-                gt_labels,
-                {0: EMPTY, 1: EMPTY, 2: TISSUE, 3: TISSUE, 4: NEUROPIL, 5: TISSUE}),
-
-            # gp.ExcludeLabels(
-            #     gt_labels,
-            #     [0],
-            #     background_value=1) +
-
-            # gp.ExcludeLabels(
-            #     gt_labels,
-            #     [3, 5],
-            #     background_value=2) +
-
-            # gp.ExcludeLabels(
-            #     gt_labels,
-            #     [4],
-            #     background_value=3)
+            gp.RandomProvider(),
         ) +
-
-        # Labels:
-        # 0: background/empty
-        # 1: tissue/bundles/esophagus
-        # 2: neuropil
 
         gp.RandomProvider() +
 
-        # gp.IntensityScaleShift(
-        #     gt_labels,
-        #     scale=1,
-        #     shift=-1) +
+        gp.MapLabels(gt_labels, CLASS_3_MAPPING) +
 
         # convert raw to float in [0, 1]
         gp.Normalize(raw) +
