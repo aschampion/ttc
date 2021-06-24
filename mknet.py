@@ -54,8 +54,8 @@ def create_network(input_shape, name, num_classes):
         epsilon=1e-8)
     optimizer = opt.minimize(loss)
 
-    pred_logits = tf.transpose(pred_affs_swap, [0, 3, 1, 2])
-    pred_labels = tf.argmax(pred_logits, axis=1)
+    # pred_logits = tf.transpose(pred_affs_swap, [0, 3, 1, 2])
+    pred_labels = tf.argmax(pred_affs_batched, axis=1, output_type=tf.int32)
     gt_labels_u8 = tf.cast(gt_affs, dtype=tf.uint8)
     pred_labels_u8 = tf.cast(pred_labels, dtype=tf.uint8)
 
@@ -72,8 +72,9 @@ def create_network(input_shape, name, num_classes):
     config = {
         'raw': raw.name,
         'pred_labels_swap': pred_affs_swap.name,
-        'pred_logits': pred_logits.name,
+        # 'pred_logits': pred_logits.name,
         'pred_labels': pred_labels.name,
+        'pred_labels_u8': pred_labels_u8.name,
         'gt_labels': gt_affs.name,
         'loss_weights': loss_weights.name,
         'loss': loss.name,

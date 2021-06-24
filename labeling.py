@@ -49,7 +49,7 @@ class Predictor:
     def predict(self, iteration, slab, n_slabs, dataset_file='dataset.json'):
 
         raw = gp.ArrayKey('RAW')
-        pred_labels = gp.ArrayKey('PRED_LABELS')
+        pred_labels = gp.ArrayKey('PRED_LABELS_U8')
 
         with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'default_dataset.json'), 'r') as f:
             DEFAULT_DATASET = json.load(f)
@@ -74,7 +74,7 @@ class Predictor:
             with open(input_path, 'r') as f:
                 input_attr = json.load(f)
             output_attr = {
-                "dataType": "int64",
+                "dataType": "uint8",
                 "compression": {"type": "gzip", "level": 5},
                 "offset": [0, 0, 0],
                 "resolution": dataset['predict']['input']['resolution'],

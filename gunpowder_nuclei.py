@@ -26,6 +26,7 @@ def train(iterations, run_name="default"):
 
     # the predicted labels
     pred_labels = gp.ArrayKey('PRED_LABELS')
+    pred_labels_u8 = gp.ArrayKey('PRED_LABELS_U8')
 
     # the gredient of the loss wrt to the predicted labels
     pred_labels_gradients = gp.ArrayKey('PRED_LABELS_GRADIENTS')
@@ -199,7 +200,7 @@ def train(iterations, run_name="default"):
                 net_config['loss_weights']: loss_weights
             },
             outputs={
-                net_config['pred_labels']: pred_labels
+                net_config['pred_labels_u8']: pred_labels_u8
             },
             gradients={
                 net_config['pred_labels_swap']: pred_labels_gradients
