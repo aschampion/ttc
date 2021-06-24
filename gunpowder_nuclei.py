@@ -137,6 +137,32 @@ def train(iterations, run_name="default"):
 
             # chose a random location for each requested batch
             gp.RandomLocation(
+                min_masked=0.5,
+                mask=gt_ttc_labels,
+                mask_predicate=lambda m: np.logical_or(m == 1, m == 4)),
+
+            tuple(
+                gp.DirectorySource(
+                    'data/1099/0001_Brain',
+                    {
+
+                        raw: '{i}.png'.format(i=496+i),
+                        gt_labels: 'label_render/nuclei/labels000{i}.tif'.format(i=i),
+                        gt_ttc_labels: 'label_render/ttc/labels000{i}.tif'.format(i=i),
+                    },
+                    {
+                        raw: gp.ArraySpec(voxel_size=(48,48), interpolatable=True),
+                        gt_labels: gp.ArraySpec(voxel_size=(48,48), interpolatable=False),
+                        gt_ttc_labels: gp.ArraySpec(voxel_size=(48,48), interpolatable=False),
+                    }
+                ) +
+                gp.Pad(raw, context)
+                for i in range(0, 1)
+            ) +
+
+            gp.RandomProvider() +
+
+            gp.RandomLocation(
                 min_masked=0.8,
                 mask=gt_ttc_labels,
                 mask_predicate=lambda m: np.logical_or(m == 1, m == 4)),

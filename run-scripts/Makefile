@@ -8,7 +8,7 @@ endif
 dir-setup:
 	ln -sf ../../Makefile
 	ln -s ../log
-	ln -s /data1/championa/Tissue\ labeling data
+	ln -s /data1/championa/Tissue\ labeling/new-data data
 	CUDA_VISIBLE_DEVICES=0 python ~/code/ttc-project/docker/ttc/mknet.py
 
 ttc-train:
