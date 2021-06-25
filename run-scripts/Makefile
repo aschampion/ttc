@@ -9,16 +9,16 @@ dir-setup:
 	ln -sf ../../Makefile
 	ln -s ../log
 	ln -s /data1/championa/Tissue\ labeling/new-data data
-	CUDA_VISIBLE_DEVICES=8 python ~/code/ttc-project/docker/ttc/mknet.py
+	CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-8}" python ~/code/ttc-project/docker/ttc/mknet.py
 
 ttc-train:
-	CUDA_VISIBLE_DEVICES=0 python ~/code/ttc-project/docker/ttc/gunpowder_ttc.py $$(basename "$$PWD")
+	CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0}" python ~/code/ttc-project/docker/ttc/gunpowder_ttc.py $$(basename "$$PWD")
 
 ttc-predict: check-slabs
 	parallel --no-notice --ungroup CUDA_VISIBLE_DEVICES={1} python ~/code/ttc-project/docker/ttc/gunpowder_ttc_predict.py {1} $(slabs) $(dataset) :::: <(seq 0 $$(($(slabs) - 1)))
 
 nuclei-train:
-	CUDA_VISIBLE_DEVICES=1 python ~/code/ttc-project/docker/ttc/gunpowder_nuclei.py $$(basename "$$PWD")
+	CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-1}" python ~/code/ttc-project/docker/ttc/gunpowder_nuclei.py $$(basename "$$PWD")
 
 nuclei-predict: check-slabs
 	parallel --no-notice --ungroup CUDA_VISIBLE_DEVICES={1} python ~/code/ttc-project/docker/ttc/gunpowder_nuclei_predict.py {1} $(slabs) $(dataset) :::: <(seq 0 $$(($(slabs) - 1)))
