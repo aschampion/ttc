@@ -1,5 +1,6 @@
 from gunpowder.zoo.tensorflow import unet, conv_pass
 import tensorflow as tf
+import argparse
 import json
 
 def create_network(input_shape, name, num_classes):
@@ -88,14 +89,25 @@ def create_network(input_shape, name, num_classes):
 
 if __name__ == "__main__":
 
+    parser = argparse.ArgumentParser(
+        description="Make networks for tissue and nuclei segmentation"
+    )
+
+    parser.add_argument("--ttc_train_size", type=int, default=268, required=False)
+    parser.add_argument("--ttc_num_classes", type=int, default=3, required=False)
+    parser.add_argument("--nuclei_train_size", type=int, default=268, required=False)
+    parser.add_argument("--test_size", type=int, default=1024, required=False)
+
+    args = parser.parse_args()
+
     # create a network for training
-    create_network((268, 268), 'train_net', 3)
+    create_network((args.ttc_train_size, args.ttc_train_size), 'train_net', args.ttc_num_classes)
 
     # create a larger network for faster prediction
-    create_network((1024, 1024), 'test_net', 3)
+    create_network((args.test_size, args.test_size), 'test_net', args.ttc_num_classes)
 
     # create a network for training
-    create_network((268, 268), 'train_net_nuclei', 2)
+    create_network((args.nuclei_train_size, args.nuclei_train_size), 'train_net_nuclei', 2)
 
     # create a larger network for faster prediction
-    create_network((1024, 1024), 'test_net_nuclei', 2)
+    create_network((args.test_size, args.test_size), 'test_net_nuclei', 2)
